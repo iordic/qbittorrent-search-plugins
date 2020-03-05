@@ -7,7 +7,7 @@ from novaprinter import prettyPrinter
 import re
 
 class elitetorrent(object):
-    url = 'https://www.elitetorrent.li'
+    url = 'https://www.elitetorrent.nl'
     name = 'Elitetorrent'
     # Page has only movies and tv series. Search box has no filters
     supported_categories = {'all': '0', 'movies': 'peliculas', 'tv': 'series'}
@@ -54,6 +54,7 @@ class elitetorrent(object):
             # Get all ocurrencies
             items = re.findall(pattern, html)
             links = links + items
+            links = set(links)  # Remove duplicated items
         
         for i in links:
             # Visiting individual results to get its attributes makes it so slow
