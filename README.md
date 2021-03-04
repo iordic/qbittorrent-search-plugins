@@ -6,7 +6,10 @@ Search engines implemented by me to integrate with qBittorrent GUI (used in the 
   * Available categories: (all, movies, tv)
 
 ### Installation
-Copy [raw link](https://raw.githubusercontent.com/iordic/qbittorrent-search-plugins/master/engines/elitetorrent.py) into your qbittorrent client.
+Copy [raw link](https://raw.githubusercontent.com/iordic/qbittorrent-search-plugins/master/engines/elitetorrent.py) into your qbittorrent client. Then follow this steps:
+
+![Show search section](/images/enable_search.png)
+![Install engine](/images/instalacion_engine.png)
 
 ### Testing
 ```
