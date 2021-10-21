@@ -76,8 +76,7 @@ def initialize_engines():
             # bind class name
             globals()[engi] = getattr(engine_module, engi)
             supported_engines.append(engi)
-        except Exception as e:
-            #print(e)
+        except Exception:
             pass
 
     return supported_engines
