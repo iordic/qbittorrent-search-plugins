@@ -1,4 +1,4 @@
-#VERSION: 1.03
+#VERSION: 1.04
 #AUTHORS: iordic (iordicdev@gmail.com)
 
 
@@ -7,7 +7,7 @@ from novaprinter import prettyPrinter
 import re
 
 class elitetorrent(object):
-    url = 'https://www.elitetorrent.com'
+    url = 'https://elitetorrent.com'
     name = 'Elitetorrent'
     # Page has only movies and tv series. Search box has no filters
     supported_categories = {'all': '0', 'movies': 'peliculas', 'tv': 'series'}
@@ -53,32 +53,28 @@ class elitetorrent(object):
                         else r'{0}/{1}/.*?/'.format(self.url, self.supported_categories[cat])
             # Get all ocurrencies
             items = re.findall(pattern, html)
-            links = links + items
-            links = list(dict.fromkeys(links))  # Remove duplicated items (w3schools <3)
+            for item in items:
+                if item not in links:
+                    links.append(item)
 
         for i in links:
             # Visiting individual results to get its attributes makes it so slow
             data = retrieve_url(i).replace('\n','')
             item = {}
-            pattern = r'({0}/wp-content/lazy/js/.+.js)'.format(self.url)
-            js_file = re.findall(pattern, data)[0]
-            obfuscated = retrieve_url(js_file)
-            pattern = r'(\'[a-z0-9]+\',\'[a-z0-9]+\',\'[a-z0-9]+\',\'[a-z0-9]+\')'  # base36 letter caps
-            for j in range(3):  # its encoded iterated 3 times            
-                obfuscated = re.findall(pattern, obfuscated)[0]
-                obfuscated = obfuscated.replace("'","").split(",")
-                (a,b,c) = obfuscated[:-1]
-                obfuscated = self.deobfuscate(a,b,c)
-
             # Can't obtain info about leechers and seaders
             item['seeds'] = '-1'
             item['leech'] = '-1'
-            # re.match().group(0) didn't work for me 
+            # re.match().group(0) didn't work for me
+            item['name'] = i.split("/")[-2]
+            item['size'] = re.search("Tama.?o:</b> [0-9\.]+[\ GM]+B", data).group(0).split("</b>")[1].strip()
+            """
+            item['name'] = re.findall(r'files/.*?\.torrent"', data)[0] \
+                            .lstrip("files/").rstrip('.torrent"').strip()
             item['size'] = re.findall(r'o:</b>.*?Bs', data)[0].lstrip("o:</b>") \
                             .rstrip("s").strip()
-            item['link'] = re.findall(r'\'magnet:.*?\'', obfuscated)[0].replace("'","")
+            """
+            item['link'] = re.findall(r'"magnet:.*?"', data)[0].strip('"')
             item['desc_link'] = i
-            item['name'] = item['desc_link'].rstrip('/').split("/")[-1] # lazy but works
             item['engine_url'] = self.url
             # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link
             prettyPrinter(item)
