@@ -67,56 +67,8 @@ class elitetorrent(object):
             # re.match().group(0) didn't work for me
             item['name'] = i.split("/")[-2]
             item['size'] = re.search("Tama.?o:</b> [0-9\.]+[\ GM]+B", data).group(0).split("</b>")[1].strip()
-            """
-            item['name'] = re.findall(r'files/.*?\.torrent"', data)[0] \
-                            .lstrip("files/").rstrip('.torrent"').strip()
-            item['size'] = re.findall(r'o:</b>.*?Bs', data)[0].lstrip("o:</b>") \
-                            .rstrip("s").strip()
-            """
             item['link'] = re.findall(r'"magnet:.*?"', data)[0].strip('"')
             item['desc_link'] = i
             item['engine_url'] = self.url
             # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link
             prettyPrinter(item)
-
-    def deobfuscate(self, a, b, c):
-        """Deobfuscate Elitetorrent encodings.
-           Copied and cleaned code from its own js file.
-           Stupid transpositions and stupid encodings. :D
-        """
-        i = 0;
-        text = []
-        key = []
-
-        # Condition to loop over all items from a, b & c
-        while (len(text) + len(key)) != (len(a) + len(b) + len(c)):
-            if i < 5:              # Conversion is like:
-                key.append(a[i])   # | a b c d e |
-                key.append(b[i])   # | f g h i j | => |a f k b g l c h m d i n e j o|
-                key.append(c[i])   # | k l m n o |
-            else:
-                if i < len(a):          # The same conversion but rows has different sizes
-                    text.append(a[i])   # Example:
-                if i < len(b):          # | a b c d e f |
-                    text.append(b[i])   # | g h i j     | => |a g k b h l c i d j e f|
-                if i < len(c):          # | k l         |
-                    text.append(c[i])
-            i+=1
-
-        # First 3 strings converted to 2 :)
-        text = ''.join(text)
-        key = ''.join(key)
-
-        # And this 2 strings will be converted to 1 :/
-        result = []
-        j = 0
-
-        for i in range(0, len(text), 2):
-            x = 1 if ord(key[j]) % 2 else -1    # check if ascii value of key[j] is even
-            result.append(chr(int(text[i:i+2], 36) - x)) # Conversions: char <- int <- base36
-            j+=1
-            if j >= len(key):
-                j = 0   # Reset position, key is shorter than text
-        return ''.join(result)  # Convert array to string
-
-
