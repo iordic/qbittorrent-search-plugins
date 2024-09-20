@@ -20,3 +20,6 @@ $ python3 nova2.py <engine> <category> <query>
 Example:
 $ python3 nova2.py elitetorrent all godzilla
 ```
+
+#### Updating nova3
+`git subtree merge -P nova3 qbittorrent-staging``
