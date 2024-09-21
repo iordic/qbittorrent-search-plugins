@@ -20,6 +20,18 @@ def deobfuscate_magnet(obfuscated):
     except:
         return None
 
+def format_info(info):
+    info['title'] = info['title'].group(0).lstrip('<h1>Descargar').rstrip('por torrent</h1>').strip() if info['title'] is not None else None
+    info['link'] = deobfuscate_magnet(info['link'][1].lstrip('i=').rstrip('"')) if info['link'] is not None else None
+    info['size'] = info['size'].group(0).split("</b>")[1].strip() if info['size'] is not None else '0'
+    info['quality'] = info['quality'].group(0).lstrip('Calidad:</b>').strip() if info['quality'] is not None else None
+    info['language'] = info['language'].group(0).lstrip('Idioma:</b>').strip() if info['language'] is not None else None
+    info['date'] = info['date'].group(0).replace(' ', '').lstrip('Fecha:</b>') if info['date'] is not None else None
+    
+    info['formatted_name'] = info['title']
+    info['formatted_name'] += ' [{}]'.format(info['language']) if info['language'] is not None else ''
+    info['formatted_name'] += ' {} '.format(info['quality']) if info['quality'] is not None else ''
+    info['formatted_name'] += '({})'.format(info['date']) if info['date'] is not None else ''
 
 class elitetorrent(object):
     url = 'https://www.elitetorrent.com'
@@ -75,16 +87,26 @@ class elitetorrent(object):
         for i in links:
             # Visiting individual results to get its attributes makes it so slow
             data = retrieve_url(i).replace('\n','')
-            item = {}
-            # Unable to obtain info about leechers and seaders
-            item['seeds'] = '-1'
-            item['leech'] = '-1'
-            item['name'] = i.split("/")[-2]
-            item['size'] = re.search("Tama.?o:</b> [0-9\.]+[\ GM]+B", data).group(0).split("</b>")[1].strip()
-            item['desc_link'] = i
-            item['engine_url'] = self.url
-            item['link'] = deobfuscate_magnet(re.findall(r'i=[-A-Za-z0-9+/]+\={0,3}\"', data)[1].lstrip('i=').rstrip('"'))
-            if item['link'] is None:
-                continue    # decoding has failed, skip
+            info = {}
+            info['title'] = re.search(r'<h1>Descargar .+ por torrent</h1>', data)
+            info['link'] = re.findall(r'i=[-A-Za-z0-9+/]+\={0,3}\"', data)
+            info['size'] = re.search("Tama.?o:</b> [0-9\.]+[\ GM]+B", data)
+            info['quality'] = re.search(r'Calidad:</b> [0-9\.a-z\-]+', data)
+            info['language'] = re.search(r'Idioma:</b>[a-zA-Zñ\ ]+', data)
+            info['date'] = re.search(r'Fecha:</b>[\ 0-9\-]+', data)
+            format_info(info)                
+
+            if info['title'] is None or info['link'] is None:
+                continue    # decoding has failed, skip           
+
+            item = {
+                'seeds' : '-1', # Unable to obtain info about leechers and seaders
+                'leech' : '-1',
+                'name' : info['formatted_name'],
+                'size' : info['size'],
+                'desc_link' : i,
+                'engine_url' : self.url,
+                'link' : info['link']
+            }
             # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link
             prettyPrinter(item)
