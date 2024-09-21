@@ -11,15 +11,18 @@ Copy [raw link](https://raw.githubusercontent.com/iordic/qbittorrent-search-plug
 ![Show search section](/images/enable_search.png)
 ![Install engine](/images/instalacion_engine.png)
 
-### Testing
-```
-$ git clone https://github.com/iordic/qbittorrent-search-plugins.git
-$ cd qbittorrent-search-plugins
-$ python3 nova2.py <engine> <category> <query>
+### Use
+When you are using this engine, you can note that the list doesn't shows all of encountered elements:
 
-Example:
-$ python3 nova2.py elitetorrent all godzilla
-```
+![Filtered results](images/filtered_results.jpg)
 
-#### Updating nova3
-`git subtree merge -P nova3 qbittorrent-staging``
+This is because there are elements in list that has not contains the search keyword but the web page returned this result. Here you can see real results at console:
+
+![Unfiltered results at console](images/results_unfiltered.jpg)
+
+### Develop
+This repository uses nova2 files for testing purposes. To keep files update use: `git subtree merge -P nova3 qbittorrent-staging`
+
+Testing:
+1. Clone this repo `git clone https://github.com/iordic/qbittorrent-search-plugins.git`
+2. Copy 'engines' folder inside 'nova3' folder and then use: `python3 nova2.py <engine> <category> <query>` <br>Example: `python3 nova2.py elitetorrent all godzilla`
