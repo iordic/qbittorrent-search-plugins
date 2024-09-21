@@ -1,13 +1,28 @@
-#VERSION: 1.04
-#AUTHORS: iordic (iordicdev@gmail.com)
-
-
-from helpers import download_file, retrieve_url
-from novaprinter import prettyPrinter
+#VERSION: 1.5
+# AUTHORS: iordic (iordicdev@gmail.com)
 import re
+import base64
+import codecs
+
+from html.parser import HTMLParser
+from novaprinter import prettyPrinter
+from helpers import download_file, retrieve_url
+
+MAX_DEPTH = 10
+
+def deobfuscate_magnet(obfuscated):
+    try:
+        for i in range(MAX_DEPTH):
+            obfuscated = base64.b64decode(obfuscated)
+            decoded_value = codecs.decode(obfuscated.decode(encoding='utf-8'), 'rot_13')
+            if 'magnet' in decoded_value:
+                return decoded_value
+    except:
+        return None
+
 
 class elitetorrent(object):
-    url = 'https://elitetorrent.com'
+    url = 'https://www.elitetorrent.com'
     name = 'Elitetorrent'
     # Page has only movies and tv series. Search box has no filters
     supported_categories = {'all': '0', 'movies': 'peliculas', 'tv': 'series'}
@@ -61,14 +76,15 @@ class elitetorrent(object):
             # Visiting individual results to get its attributes makes it so slow
             data = retrieve_url(i).replace('\n','')
             item = {}
-            # Can't obtain info about leechers and seaders
+            # Unable to obtain info about leechers and seaders
             item['seeds'] = '-1'
             item['leech'] = '-1'
-            # re.match().group(0) didn't work for me
             item['name'] = i.split("/")[-2]
             item['size'] = re.search("Tama.?o:</b> [0-9\.]+[\ GM]+B", data).group(0).split("</b>")[1].strip()
-            item['link'] = re.findall(r'"magnet:.*?"', data)[0].strip('"')
             item['desc_link'] = i
             item['engine_url'] = self.url
+            item['link'] = deobfuscate_magnet(re.findall(r'i=[-A-Za-z0-9+/]+\={0,3}\"', data)[1].lstrip('i=').rstrip('"'))
+            if item['link'] is None:
+                continue    # decoding has failed, skip
             # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link
             prettyPrinter(item)
