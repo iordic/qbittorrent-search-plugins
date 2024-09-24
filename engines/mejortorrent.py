@@ -8,14 +8,12 @@ from datetime import datetime
 import urllib.parse
 import re
 
+MAX_PAGES = 10
+
 class mejortorrent(object):
     url = 'https://www21.mejortorrent.zip'
     name = 'MejorTorrent'
-    supported_categories = {
-        'all': '0',
-        'movies': 'pelicula',
-        'tv': 'serie'
-    }
+    supported_categories = {'all': '0', 'movies': 'pelicula', 'tv': 'serie'}
 
     def __init__(self):
         """
@@ -26,21 +24,41 @@ class mejortorrent(object):
         print(download_file(info))
 
     def search(self, what, cat='all'):
-        #Search example: https://www21.mejortorrent.zip/busqueda?q=godzilla
-        #TODO: pagination: search_url = "{domain}/page/{page}/?s={query}".format(domain=self.url, page=page, query=what.replace('%20', '+'))
+        # Search example: https://www21.mejortorrent.zip/busqueda?q=godzilla
         search_url = "{domain}/busqueda?q={query}".format(domain=self.url, query=urllib.parse.quote(what))
         html = retrieve_url(search_url)
-        all_categories = dict(self.supported_categories)  # create a copy
-        all_categories.pop('all')
-        category_patterns = map(lambda e: "{domain}/{category}/[0-9]+/[^\"]+".format(domain=self.url, category=e), list(all_categories.values()))
-        pattern = r"({})".format("|".join(category_patterns)) if cat == "all" \
-            else r'{domain}/{category}/[0-9]+/[^\"]+'.format(domain=self.url, category=self.supported_categories[cat])
-        items = re.findall(pattern, html)
+        num_pages = self.get_num_pages(html)
+        items = []
+        items.extend(self.parse_page(html, cat))
+        for p in range(2, self.get_num_pages(html) + 1):
+            if p > MAX_PAGES:
+                break
+            # Search page example: https://www21.mejortorrent.zip/busqueda/page/3?q=paco
+            search_url = "{domain}/busqueda/page/{page}?q={query}".format(domain=self.url, page=p, query=urllib.parse.quote(what))
+            html = retrieve_url(search_url)
+            items.extend(self.parse_page(html, cat))
+        
         for i in items:
             if self.supported_categories['movies'] in i:
                 self.parse_film(i)
             elif self.supported_categories['tv'] in i:
                 self.parse_tv_season(i)
+
+    def get_num_pages(self, html):
+        pages = re.findall(r'"go to page [0-9]+"', html)
+        if not pages:
+            return 1
+        else:
+            # map to array of integers and calculate max value
+            return max(list(map(lambda n: int(n.strip('"').split(" ")[-1]), pages)))
+
+    def parse_page(self, html, category):
+        all_categories = dict(self.supported_categories)  # create a copy
+        all_categories.pop('all')
+        category_patterns = map(lambda e: "{domain}/{category}/[0-9]+/[^\"]+".format(domain=self.url, category=e), list(all_categories.values()))
+        pattern = r"({})".format("|".join(category_patterns)) if category == "all" \
+            else r'{domain}/{category}/[0-9]+/[^\"]+'.format(domain=self.url, category=self.supported_categories[category])
+        return re.findall(pattern, html)
 
     def parse_film(self, url):
         html = retrieve_url(url)
