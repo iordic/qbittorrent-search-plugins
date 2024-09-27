@@ -1,4 +1,4 @@
-#VERSION: 1.00
+# VERSION: 1.00
 # AUTHORS: iordic (iordicdev@gmail.com)
 
 from helpers import download_file, retrieve_url
@@ -98,7 +98,7 @@ class mejortorrent(object):
 
     def search(self, what, cat='all'):
         # Search example: https://www21.mejortorrent.zip/busqueda?q=godzilla
-        search_url = "{domain}/busqueda?q={query}".format(domain=self.url, query=urllib.parse.quote(what))
+        search_url = "{domain}/busqueda?q={query}".format(domain=self.url, query=what)
         html = retrieve_url(search_url)
         num_pages = self.get_num_pages(html)
         items = []
@@ -107,7 +107,7 @@ class mejortorrent(object):
             if p > MAX_PAGES:
                 break
             # Search page example: https://www21.mejortorrent.zip/busqueda/page/3?q=paco
-            search_url = "{domain}/busqueda/page/{page}?q={query}".format(domain=self.url, page=p, query=urllib.parse.quote(what))
+            search_url = "{domain}/busqueda/page/{page}?q={query}".format(domain=self.url, page=p, query=what)
             html = retrieve_url(search_url)
             items.extend(self.parse_page(html, cat))
         
