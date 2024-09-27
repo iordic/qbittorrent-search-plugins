@@ -4,6 +4,7 @@
 from helpers import download_file, retrieve_url
 from novaprinter import prettyPrinter
 
+from html.parser import HTMLParser
 from datetime import datetime
 import urllib.parse
 import re
@@ -15,11 +16,83 @@ class mejortorrent(object):
     name = 'MejorTorrent'
     supported_categories = {'all': '0', 'movies': 'pelicula', 'tv': 'serie'}
 
+    class SeriesHtmlParser(HTMLParser):
+        def __init__(self, domain, path):
+            HTMLParser.__init__(self)
+            self.domain = domain
+            self.path = path
+            self.title = ""
+            self.title_found = False
+            self.table_found = False
+            self.item_found = False
+            self.field_found = False
+            self.key_found = False
+            self.column_number = 0
+            self.item = {}
+
+        def handle_starttag(self, tag, attrs):
+            params = dict(attrs)
+            if tag == "p":
+                if "class" in params and "text-blue-900" in params["class"]:
+                    self.title_found = True
+                elif self.field_found:
+                    self.key_found = True
+            if self.table_found:
+                if tag == "tr":
+                    self.item_found = True
+                elif tag == "td":
+                    self.field_found = True
+                elif tag == "a" and self.field_found and "href" in params:
+                    self.item['link'] = params["href"]
+            else:
+                if tag == "tbody":
+                    self.table_found = True
+                    
+        def handle_data(self, data):
+            data = data.strip()
+            if self.title_found:
+                self.title = data
+            if self.field_found:
+                if self.column_number == 0:
+                    self.item['id'] = data
+                elif self.column_number == 1:
+                    self.item['episodes'] = data
+                elif self.column_number == 2:
+                    self.item['date'] = round(datetime.timestamp(datetime.strptime(data, "%Y-%m-%d")))
+                elif self.column_number == 3 and self.key_found:
+                    self.item['key'] = data
+
+        def handle_endtag(self, tag):
+            if tag == "p": 
+                if self.title_found:
+                    self.title_found = False
+                elif self.key_found:
+                    self.key_found = False
+            if tag == "td" and self.field_found:
+                self.field_found = False
+                self.column_number += 1
+            if tag == "tr" and self.item_found:
+                info = {
+                    'name': "{title} ({episodes}){key}" \
+                            .format(title=self.title, episodes=self.item['episodes'], key=", password: " + self.item['key'] if self.item['key'] != "Sin clave" else ""),
+                    'size': -1,
+                    'link': '{domain}{path}'.format(domain=self.domain, path=self.item['link']),
+                    'desc_link': self.path,
+                    'engine_url': self.domain,
+                    'seeds': -1,
+                    'leech': -1,
+                    'pub_date': self.item['date']
+                }
+                prettyPrinter(info)
+                self.item_found = False
+                self.item = {}
+                self.column_number = 0
+    
+
     def __init__(self):
         """
         Some initialization
         """
-
     def download_torrent(self, info):
         print(download_file(info))
 
@@ -77,5 +150,7 @@ class mejortorrent(object):
         }
         prettyPrinter(info)
     
-    def parse_tv_season(self, url):
-        None
+    def parse_tv_season(self, link):
+        html = retrieve_url(link)
+        parser = self.SeriesHtmlParser(self.url, link)
+        parser.feed(html)
