@@ -1,4 +1,4 @@
-#VERSION: 1.5
+#VERSION: 1.6
 # AUTHORS: iordic (iordicdev@gmail.com)
 import re
 import base64
@@ -27,6 +27,8 @@ def format_info(info):
     info['quality'] = info['quality'].group(0).lstrip('Calidad:</b>').strip() if info['quality'] is not None else None
     info['language'] = info['language'].group(0).lstrip('Idioma:</b>').strip() if info['language'] is not None else None
     info['date'] = info['date'].group(0).replace(' ', '').lstrip('Fecha:</b>') if info['date'] is not None else None
+    info['seeds'] = info['seeds'].group(0).split(":")[-1].strip() if info['seeds'] is not None else -1
+    info['leech'] = info['leech'].group(0).split(":")[-1].strip() if info['leech'] is not None  else -1
     
     info['formatted_name'] = info['title']
     info['formatted_name'] += ' [{}]'.format(info['language']) if info['language'] is not None else ''
@@ -94,14 +96,16 @@ class elitetorrent(object):
             info['quality'] = re.search(r'Calidad:</b> [0-9\.a-z\-]+', data)
             info['language'] = re.search(r'Idioma:</b>[a-zA-Zñ\ ]+', data)
             info['date'] = re.search(r'Fecha:</b>[\ 0-9\-]+', data)
+            info['seeds'] = re.search(r'<b>Semillas</b>:[\ 0-9]*', data)
+            info['leech'] = re.search(r'<b>Clientes</b>:[\ 0-9]*', data)
             format_info(info)                
 
             if info['title'] is None or info['link'] is None:
                 continue    # decoding has failed, skip           
 
             item = {
-                'seeds' : '-1', # Unable to obtain info about leechers and seaders
-                'leech' : '-1',
+                'seeds' : int(info['seeds']) if info['seeds'] != '' else -1,
+                'leech' : int(info['leech']) if info['leech'] != '' else -1,
                 'name' : info['formatted_name'],
                 'size' : info['size'],
                 'desc_link' : i,
