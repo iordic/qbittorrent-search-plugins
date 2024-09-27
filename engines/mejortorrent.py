@@ -1,13 +1,13 @@
 # VERSION: 1.00
 # AUTHORS: iordic (iordicdev@gmail.com)
 
-from helpers import download_file, retrieve_url
-from novaprinter import prettyPrinter
-
-from html.parser import HTMLParser
-from datetime import datetime
-import urllib.parse
 import re
+import urllib.parse
+from datetime import datetime
+from html.parser import HTMLParser
+
+from novaprinter import prettyPrinter
+from helpers import download_file, retrieve_url
 
 MAX_PAGES = 10
 
@@ -17,10 +17,12 @@ class mejortorrent(object):
     supported_categories = {'all': '0', 'movies': 'pelicula', 'tv': 'serie'}
 
     class SeriesHtmlParser(HTMLParser):
-        def __init__(self, domain, path):
+        def __init__(self, domain):
             HTMLParser.__init__(self)
             self.domain = domain
-            self.path = path
+        
+        def init(self, link):
+            self.path = link
             self.title = ""
             self.title_found = False
             self.table_found = False
@@ -87,12 +89,10 @@ class mejortorrent(object):
                 self.item_found = False
                 self.item = {}
                 self.column_number = 0
-    
 
     def __init__(self):
-        """
-        Some initialization
-        """
+        self.tv_parser = self.SeriesHtmlParser(self.url)
+    
     def download_torrent(self, info):
         print(download_file(info))
 
@@ -152,5 +152,5 @@ class mejortorrent(object):
     
     def parse_tv_season(self, link):
         html = retrieve_url(link)
-        parser = self.SeriesHtmlParser(self.url, link)
-        parser.feed(html)
+        self.tv_parser.init(link)
+        self.tv_parser.feed(html)

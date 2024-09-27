@@ -3,8 +3,9 @@
 import re
 import base64
 import codecs
-
+from datetime import datetime
 from html.parser import HTMLParser
+
 from novaprinter import prettyPrinter
 from helpers import download_file, retrieve_url
 
@@ -26,7 +27,7 @@ def format_info(info):
     info['size'] = info['size'].group(0).split("</b>")[1].strip() if info['size'] is not None else '0'
     info['quality'] = info['quality'].group(0).lstrip('Calidad:</b>').strip() if info['quality'] is not None else None
     info['language'] = info['language'].group(0).lstrip('Idioma:</b>').strip() if info['language'] is not None else None
-    info['date'] = info['date'].group(0).replace(' ', '').lstrip('Fecha:</b>') if info['date'] is not None else None
+    info['date'] = info['date'].group(0).replace(' ', '').lstrip('Fecha:</b>') if info['date'] is not None else -1
     info['seeds'] = info['seeds'].group(0).split(":")[-1].strip() if info['seeds'] is not None else -1
     info['leech'] = info['leech'].group(0).split(":")[-1].strip() if info['leech'] is not None  else -1
     
@@ -103,6 +104,15 @@ class elitetorrent(object):
             if info['title'] is None or info['link'] is None:
                 continue    # decoding has failed, skip           
 
+            pub_date = info['date']
+            if pub_date != -1:
+                # there are 2 format dates: YYYY-MM-DD or DD-MM-YYYY
+                if int(pub_date.split("-")[0]) > 1000:
+                    parsed_date = datetime.strptime(pub_date, "%Y-%m-%d")
+                else:
+                    parsed_date = datetime.strptime(pub_date, "%d-%m-%Y")
+                pub_date = round(datetime.timestamp(parsed_date))
+
             item = {
                 'seeds' : int(info['seeds']) if info['seeds'] != '' else -1,
                 'leech' : int(info['leech']) if info['leech'] != '' else -1,
@@ -110,7 +120,8 @@ class elitetorrent(object):
                 'size' : info['size'],
                 'desc_link' : i,
                 'engine_url' : self.url,
-                'link' : info['link']
+                'link' : info['link'],
+                'pub_date' : pub_date
             }
-            # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link
+            # Prints in this format: link|name|size|seeds|leech|engine_url|desc_link|pub_date
             prettyPrinter(item)
