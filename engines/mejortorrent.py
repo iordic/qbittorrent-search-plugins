@@ -1,4 +1,4 @@
-# VERSION: 1.00
+# VERSION: 1.0.1
 # AUTHORS: iordic (iordicdev@gmail.com)
 
 import re
@@ -12,7 +12,7 @@ from helpers import download_file, retrieve_url
 MAX_PAGES = 10
 
 class mejortorrent(object):
-    url = 'https://www21.mejortorrent.zip'
+    url = 'https://www36.mejortorrent.eu'
     name = 'MejorTorrent'
     supported_categories = {'all': '0', 'movies': 'pelicula', 'tv': 'serie'}
 
